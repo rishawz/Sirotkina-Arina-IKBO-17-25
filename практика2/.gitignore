@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Артефакты сборки и запуска
+build/
+dist/
+/graph.svg
+*.log
+
+# Настройки редакторов
+.vscode/
+.idea/
+*.swp
