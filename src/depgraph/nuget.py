@@ -8,7 +8,7 @@
 
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as et
 from dataclasses import dataclass
 
 from depgraph.errors import SourceError
@@ -61,8 +61,8 @@ def parse_nuspec(text):
     имени сохраняется первое вхождение.
     """
     try:
-        root = ET.fromstring(text.encode("utf-8"))
-    except ET.ParseError as error:
+        root = et.fromstring(text.encode("utf-8"))
+    except et.ParseError as error:
         raise SourceError(f"некорректный nuspec: {error}") from error
     found = {}
     for element in root.iter():
