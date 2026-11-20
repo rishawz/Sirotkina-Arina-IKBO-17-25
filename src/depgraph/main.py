@@ -3,16 +3,24 @@
 import sys
 
 from depgraph.cli import parse_args
-from depgraph.errors import AppError
+from depgraph.errors import AppError, ConfigError
+from depgraph.nuget import get_dependencies
 
 EXIT_OK = 0
 EXIT_ERROR = 2
+ANY_VERSION = "*"
 
 
 def run(config):
-    """Выводит все настраиваемые параметры в формате ключ-значение."""
-    for key, value in config.as_pairs():
-        print(f"{key}: {value}")
+    """Выводит прямые зависимости заданного пакета."""
+    if config.test_mode:
+        raise ConfigError("тестовый режим появится на этапе 3")
+    found = get_dependencies(config.repo, config.package, config.version)
+    print(f"Прямые зависимости {config.package} {config.version}:")
+    if not found:
+        print("  (нет)")
+    for dependency in found:
+        print(f"  {dependency.name} {dependency.version_range or ANY_VERSION}")
 
 
 def main(argv=None):
