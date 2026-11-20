@@ -20,34 +20,54 @@ def example(name):
     return os.path.join(EXAMPLES, name)
 
 
+def arrows(lines):
+    return [line for line in lines if "-->" in line]
+
+
 class MainTest(unittest.TestCase):
-    def test_chain(self):
+    def test_chain_plantuml(self):
         code, lines, _ = run_cli("-p", "A", "-t", "-r", example("chain.txt"))
         self.assertEqual(code, EXIT_OK)
+        self.assertEqual(lines[0], "@startuml")
+        self.assertEqual(lines[-1], "@enduml")
         self.assertEqual(
-            lines, ["A -> B", "A -> C", "B -> D", "C -> E"]
+            arrows(lines), ["n0 --> n1", "n0 --> n3", "n1 --> n2", "n3 --> n4"]
+        )
+
+    def test_no_tree_by_default(self):
+        _, lines, _ = run_cli("-p", "A", "-t", "-r", example("chain.txt"))
+        self.assertNotIn("ASCII-дерево зависимостей:", lines)
+
+    def test_ascii_tree(self):
+        code, lines, _ = run_cli(
+            "-p", "A", "-t", "-r", example("chain.txt"), "-a"
+        )
+        self.assertEqual(code, EXIT_OK)
+        start = lines.index("ASCII-дерево зависимостей:")
+        self.assertEqual(
+            lines[start + 1:],
+            ["A", "├── B", "│   └── D", "└── C", "    └── E"],
         )
 
     def test_cycle(self):
         code, lines, _ = run_cli(
-            "-p", "A", "-t", "-r", example("cycle.txt"), "-d", "4"
+            "-p", "A", "-t", "-r", example("cycle.txt"), "-d", "4", "-a"
         )
         self.assertEqual(code, EXIT_OK)
-        self.assertIn("C -> A", lines)
-        self.assertIn("D -> D", lines)
+        self.assertIn("        ├── A (*)", lines)
 
     def test_depth_option(self):
         _, lines, _ = run_cli(
             "-p", "A", "-t", "-r", example("chain.txt"), "-d", "1"
         )
-        self.assertEqual(lines, ["A -> B", "A -> C"])
+        self.assertEqual(arrows(lines), ["n0 --> n1", "n0 --> n2"])
 
     def test_filter_option(self):
         _, lines, _ = run_cli(
-            "-p", "A", "-t", "-r", example("diamond.txt"), "-f", "D"
+            "-p", "A", "-t", "-r", example("diamond.txt"), "-f", "D", "-a"
         )
-        self.assertNotIn("B -> D", lines)
-        self.assertIn("C -> X", lines)
+        self.assertNotIn('rectangle "D" as n2', lines)
+        self.assertTrue(any("X" in line for line in lines))
 
     def test_unknown_package(self):
         code, _, err = run_cli("-p", "Z", "-t", "-r", example("chain.txt"))
@@ -60,39 +80,6 @@ class MainTest(unittest.TestCase):
         self.assertEqual(code, EXIT_ERROR)
         self.assertIn("Ошибка", err)
 
-
-class ReverseMainTest(unittest.TestCase):
-    def test_reverse_chain(self):
-        code, lines, _ = run_cli(
-            "-p", "E", "-t", "-r", example("diamond.txt"), "-R", "-d", "1"
-        )
-        self.assertEqual(code, EXIT_OK)
-        self.assertEqual(
-            lines,
-            ["Обратные зависимости пакета E:", "E <- D", "E <- X"],
-        )
-
-    def test_reverse_full(self):
-        _, lines, _ = run_cli(
-            "-p", "F", "-t", "-r", example("diamond.txt"), "-R", "-d", "10"
-        )
-        self.assertIn("C <- A", lines)
-        self.assertIn("F <- E", lines)
-
-    def test_reverse_cycle(self):
-        _, lines, _ = run_cli(
-            "-p", "D", "-t", "-r", example("cycle.txt"), "-R", "-d", "10"
-        )
-        self.assertIn("D <- D", lines)
-        self.assertIn("A <- C", lines)
-
-    def test_reverse_without_dependents(self):
-        _, lines, _ = run_cli(
-            "-p", "A", "-t", "-r", example("diamond.txt"), "-R"
-        )
-        self.assertEqual(lines[-1], "Обратных зависимостей нет")
-
-    def test_reverse_needs_test_mode(self):
-        code, _, err = run_cli("-p", "A", "-V", "1.0", "-R")
-        self.assertEqual(code, EXIT_ERROR)
-        self.assertIn("тестовом режиме", err)
+    def test_reverse_option_is_gone(self):
+        with self.assertRaises(SystemExit):
+            run_cli("-p", "A", "-t", "-r", example("chain.txt"), "-R")

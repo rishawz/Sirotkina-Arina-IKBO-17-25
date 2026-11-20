@@ -1,6 +1,6 @@
 import unittest
 
-from depgraph.graph import build_graph, format_edges
+from depgraph.graph import build_graph
 from depgraph.testrepo import FileSource, parse_repo
 
 CYCLE = parse_repo("A: B\nB: C\nC: A D\nD: D\n")
@@ -57,11 +57,3 @@ class DfsTest(unittest.TestCase):
     def test_filter_is_case_insensitive(self):
         result = edges(DIAMOND, "A", BIG_DEPTH, "x")
         self.assertNotIn("X", result)
-
-    def test_format_edges(self):
-        graph = build_graph("A", FileSource(CYCLE).dependencies, BIG_DEPTH)
-        self.assertIn("C -> A", format_edges(graph))
-
-    def test_format_empty(self):
-        graph = build_graph("F", FileSource(DIAMOND).dependencies, 1)
-        self.assertEqual(format_edges(graph), ["Зависимости не найдены"])

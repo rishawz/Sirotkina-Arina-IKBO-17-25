@@ -4,13 +4,15 @@ import sys
 
 from depgraph.cli import parse_args
 from depgraph.errors import AppError, ConfigError
-from depgraph.graph import build_graph, format_edges
+from depgraph.graph import build_graph
 from depgraph.nuget_source import NuGetSource
-from depgraph.reverse import ReverseSource
+from depgraph.plantuml import to_plantuml
 from depgraph.testrepo import FileSource
+from depgraph.tree import render_tree
 
 EXIT_OK = 0
 EXIT_ERROR = 2
+TREE_TITLE = "ASCII-дерево зависимостей:"
 
 
 def make_source(config):
@@ -25,34 +27,19 @@ def make_source(config):
     return source
 
 
-def run_reverse(config, source):
-    """Выводит пакеты, которые зависят от заданного (прямо и косвенно).
-
-    Обход тот же, что и на этапе 3 (build_graph), но соседями узла
-    служат его обратные зависимости. Запись ``B <- A`` значит: A зависит
-    от B.
-    """
-    neighbors = ReverseSource(source.repo).dependents
-    graph = build_graph(
-        config.package, neighbors, config.max_depth, config.substring
-    )
-    print(f"Обратные зависимости пакета {config.package}:")
-    for line in format_edges(graph, "<-", "Обратных зависимостей нет"):
-        print(line)
-
-
 def run(config):
-    """Строит граф зависимостей и выводит его рёбра."""
+    """Строит граф, выводит описание PlantUML и, по запросу, дерево."""
     source = make_source(config)
-    if config.reverse:
-        run_reverse(config, source)
-        return
     graph = build_graph(
         config.package, source.dependencies, config.max_depth,
         config.substring,
     )
-    for line in format_edges(graph):
-        print(line)
+    print(to_plantuml(graph))
+    if config.ascii_tree:
+        print()
+        print(TREE_TITLE)
+        for line in render_tree(graph):
+            print(line)
 
 
 def main(argv=None):
@@ -63,7 +50,7 @@ def main(argv=None):
         print(f"Ошибка: {error}", file=sys.stderr)
         return EXIT_ERROR
     except RecursionError:
-        print("Ошибка: слишком глубокая цепочка зависимостей; "
+        print("Ошибка: слишком глубокая цепочка зависимостей, "
               "уменьшите --max-depth", file=sys.stderr)
         return EXIT_ERROR
     return EXIT_OK

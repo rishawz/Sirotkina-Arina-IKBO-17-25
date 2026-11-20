@@ -28,20 +28,6 @@ class Config:
     ascii_tree: bool
     max_depth: int
     substring: str
-    reverse: bool = False
-
-    def as_pairs(self):
-        """Возвращает параметры в виде списка пар ключ-значение."""
-        return [
-            ("package", self.package),
-            ("repo", self.repo),
-            ("test_mode", self.test_mode),
-            ("version", self.version),
-            ("ascii_tree", self.ascii_tree),
-            ("max_depth", self.max_depth),
-            ("substring", self.substring),
-            ("reverse", self.reverse),
-        ]
 
 
 def check_package(package, test_mode):
@@ -96,17 +82,6 @@ def check_depth(depth):
     return depth
 
 
-def check_reverse(reverse, test_mode):
-    """Обратные зависимости требуют полного индекса - тестового репозитория."""
-    if reverse and not test_mode:
-        raise ConfigError(
-            "обратные зависимости доступны только в тестовом режиме: "
-            "NuGet не отдаёт индекс «кто зависит от пакета», "
-            "добавьте --test-mode"
-        )
-    return reverse
-
-
 def build_config(args):
     """Создаёт проверенную конфигурацию из разобранных опций."""
     test_mode = args.test_mode
@@ -118,5 +93,4 @@ def build_config(args):
         ascii_tree=args.ascii_tree,
         max_depth=check_depth(args.max_depth),
         substring=args.substring,
-        reverse=check_reverse(args.reverse, test_mode),
     )

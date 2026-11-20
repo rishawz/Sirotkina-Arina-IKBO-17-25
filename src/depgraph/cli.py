@@ -35,10 +35,6 @@ def add_analysis_options(parser):
         help="максимальная глубина анализа (по умолчанию %(default)s)",
     )
     parser.add_argument(
-        "-R", "--reverse", action="store_true",
-        help="вывести обратные зависимости пакета (только с --test-mode)",
-    )
-    parser.add_argument(
         "-f", "--substring", default="",
         help="не учитывать пакеты, в имени которых есть эта подстрока",
     )
