@@ -59,3 +59,40 @@ class MainTest(unittest.TestCase):
         code, _, err = run_cli("-p", "A", "-t", "-r", bad)
         self.assertEqual(code, EXIT_ERROR)
         self.assertIn("Ошибка", err)
+
+
+class ReverseMainTest(unittest.TestCase):
+    def test_reverse_chain(self):
+        code, lines, _ = run_cli(
+            "-p", "E", "-t", "-r", example("diamond.txt"), "-R", "-d", "1"
+        )
+        self.assertEqual(code, EXIT_OK)
+        self.assertEqual(
+            lines,
+            ["Обратные зависимости пакета E:", "E <- D", "E <- X"],
+        )
+
+    def test_reverse_full(self):
+        _, lines, _ = run_cli(
+            "-p", "F", "-t", "-r", example("diamond.txt"), "-R", "-d", "10"
+        )
+        self.assertIn("C <- A", lines)
+        self.assertIn("F <- E", lines)
+
+    def test_reverse_cycle(self):
+        _, lines, _ = run_cli(
+            "-p", "D", "-t", "-r", example("cycle.txt"), "-R", "-d", "10"
+        )
+        self.assertIn("D <- D", lines)
+        self.assertIn("A <- C", lines)
+
+    def test_reverse_without_dependents(self):
+        _, lines, _ = run_cli(
+            "-p", "A", "-t", "-r", example("diamond.txt"), "-R"
+        )
+        self.assertEqual(lines[-1], "Обратных зависимостей нет")
+
+    def test_reverse_needs_test_mode(self):
+        code, _, err = run_cli("-p", "A", "-V", "1.0", "-R")
+        self.assertEqual(code, EXIT_ERROR)
+        self.assertIn("тестовом режиме", err)

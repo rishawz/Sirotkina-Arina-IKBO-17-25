@@ -52,11 +52,11 @@ def build_graph(root, neighbors, max_depth, substring=""):
     return Graph(root, walker.edges)
 
 
-def format_edges(graph):
+def format_edges(graph, arrow="->", empty="Зависимости не найдены"):
     """Возвращает рёбра графа в виде строк ``A -> B``."""
     lines = [
-        f"{parent} -> {child}"
+        f"{parent} {arrow} {child}"
         for parent, children in graph.edges.items()
         for child in children
     ]
-    return lines or ["Зависимости не найдены"]
+    return lines or [empty]
