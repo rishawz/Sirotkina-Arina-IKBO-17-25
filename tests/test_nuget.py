@@ -95,9 +95,8 @@ class HttpTest(unittest.TestCase):
 
     def test_direct_dependencies_over_http(self):
         found = get_dependencies(self.base, "Demo.App", "1.0.0")
-        self.assertEqual(
-            [d.name for d in found], ["Demo.Core", "Demo.Logging", "Demo.Compat"]
-        )
+        names = [item.name for item in found]
+        self.assertEqual(names, ["Demo.Core", "Demo.Logging", "Demo.Compat"])
 
     def test_missing_package(self):
         with self.assertRaises(SourceError):
